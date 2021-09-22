@@ -29,6 +29,8 @@ class Vocab:
         return self.__id2word
 
     def __getitem__(self, item):
+        # if item == "B-qiechufanwei_canwei":
+            # import pdb; pdb.set_trace()
         if self.UNK in self.__word2id:
             return self.__word2id.get(item, self.__word2id[self.UNK])
         return self.__word2id[item]
@@ -52,6 +54,8 @@ class Vocab:
         Returns:
             vocab: The Vocab instance generated from the given data
         """
+        if is_tags:
+            freq_cutoff = 1
         word_counts = Counter(chain(*data))
         valid_words = [w for w, d in word_counts.items() if d >= freq_cutoff]
         valid_words = sorted(valid_words, key=lambda x: word_counts[x], reverse=True)

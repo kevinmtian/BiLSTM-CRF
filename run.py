@@ -42,6 +42,7 @@ def train(args):
     train_data, dev_data = utils.generate_train_dev_dataset(args['TRAIN'], sent_vocab, tag_vocab)
     print('num of training examples: %d' % (len(train_data)))
     print('num of development examples: %d' % (len(dev_data)))
+    # import pdb; pdb.set_trace()
 
     max_epoch = int(args['--max-epoch'])
     log_every = int(args['--log-every'])

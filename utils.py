@@ -37,9 +37,15 @@ def generate_train_dev_dataset(filepath, sent_vocab, tag_vocab, train_proportion
         train_data: data for training, list of tuples, each containing a sentence and corresponding tag.
         dev_data: data for development, list of tuples, each containing a sentence and corresponding tag.
     """
+    # from funcy import flatten
     sentences, tags = read_corpus(filepath)
+    # for x in flatten(tags):
+    #     if x == "B-qiechufanwei_canwei":
+    #         print(x)    
     sentences = words2indices(sentences, sent_vocab)
+    print(tags)
     tags = words2indices(tags, tag_vocab)
+
     data = list(zip(sentences, tags))
     random.shuffle(data)
     n_train = int(len(data) * train_proportion)
