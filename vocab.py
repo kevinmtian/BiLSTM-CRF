@@ -62,9 +62,13 @@ class Vocab:
         valid_words = valid_words[: max_dict_size]
         valid_words += ['<PAD>']
         word2id = {w: idx for idx, w in enumerate(valid_words)}
-        if not is_tags:
-            word2id['<UNK>'] = len(word2id)
-            valid_words += ['<UNK>']
+        
+        # we ensure unknown tag is there regardless of whether we are collecting words or tags
+        word2id['<UNK>'] = len(word2id)
+        valid_words += ['<UNK>']
+        # if not is_tags:
+        #     word2id['<UNK>'] = len(word2id)
+        #     valid_words += ['<UNK>']
         return Vocab(word2id=word2id, id2word=valid_words)
 
     def save(self, file_path):
@@ -80,7 +84,7 @@ class Vocab:
 
 def main():
     args = docopt(__doc__)
-    sentences, tags = read_corpus(args['TRAIN'])
+    subject_ids, sentences, tags = read_corpus(args['TRAIN'])
     sent_vocab = Vocab.build(sentences, int(args['--max-size']), int(args['--freq-cutoff']), is_tags=False)
     tag_vocab = Vocab.build(tags, int(args['--max-size']), int(args['--freq-cutoff']), is_tags=True)
     sent_vocab.save(args['SENT_VOCAB'])

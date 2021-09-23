@@ -69,7 +69,7 @@ def train(args):
 
     print('start training...')
     for epoch in range(max_epoch):
-        for sentences, tags in utils.batch_iter(train_data, batch_size=int(args['--batch-size'])):
+        for subject_ids, sentences, tags in utils.batch_iter(train_data, batch_size=int(args['--batch-size'])):
             train_iter += 1
             current_batch_size = len(sentences)
             sentences, sent_lengths = utils.pad(sentences, sent_vocab[sent_vocab.PAD], device)
@@ -138,10 +138,10 @@ def test(args):
     """
     sent_vocab = Vocab.load(args['SENT_VOCAB'])
     tag_vocab = Vocab.load(args['TAG_VOCAB'])
-    sentences, tags = utils.read_corpus(args['TEST'])
+    subject_ids, sentences, tags = utils.read_corpus(args['TEST'])
     sentences = utils.words2indices(sentences, sent_vocab)
     tags = utils.words2indices(tags, tag_vocab)
-    test_data = list(zip(sentences, tags))
+    test_data = list(zip(subject_ids, sentences, tags))
     print('num of test samples: %d' % (len(test_data)))
 
     device = torch.device('cuda' if args['--cuda'] else 'cpu')
@@ -152,13 +152,13 @@ def test(args):
     result_file = open(args['RESULT'], 'w')
     model.eval()
     with torch.no_grad():
-        for sentences, tags in utils.batch_iter(test_data, batch_size=int(args['--batch-size']), shuffle=False):
+        for subject_ids, sentences, tags in utils.batch_iter(test_data, batch_size=int(args['--batch-size']), shuffle=False):
             padded_sentences, sent_lengths = utils.pad(sentences, sent_vocab[sent_vocab.PAD], device)
             predicted_tags = model.predict(padded_sentences, sent_lengths)
-            for sent, true_tags, pred_tags in zip(sentences, tags, predicted_tags):
+            for sid, sent, true_tags, pred_tags in zip(subject_ids, sentences, tags, predicted_tags):
                 sent, true_tags, pred_tags = sent[1: -1], true_tags[1: -1], pred_tags[1: -1]
                 for token, true_tag, pred_tag in zip(sent, true_tags, pred_tags):
-                    result_file.write(' '.join([sent_vocab.id2word(token), tag_vocab.id2word(true_tag),
+                    result_file.write(' '.join([sid, sent_vocab.id2word(token), tag_vocab.id2word(true_tag),
                                                 tag_vocab.id2word(pred_tag)]) + '\n')
                 result_file.write('\n')
 
@@ -179,7 +179,7 @@ def cal_dev_loss(model, dev_data, batch_size, sent_vocab, tag_vocab, device):
     model.eval()
     loss, n_sentences = 0, 0
     with torch.no_grad():
-        for sentences, tags in utils.batch_iter(dev_data, batch_size, shuffle=False):
+        for subject_ids, sentences, tags in utils.batch_iter(dev_data, batch_size, shuffle=False):
             sentences, sent_lengths = utils.pad(sentences, sent_vocab[sent_vocab.PAD], device)
             tags, _ = utils.pad(tags, tag_vocab[sent_vocab.PAD], device)
             batch_loss = model(sentences, tags, sent_lengths)  # shape: (b,)

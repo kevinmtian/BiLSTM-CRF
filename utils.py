@@ -10,20 +10,22 @@ def read_corpus(filepath):
         sentences: a list of sentences, each sentence is a list of str
         tags: corresponding tags
     """
-    sentences, tags = [], []
-    sent, tag = ['<START>'], ['<START>']
+    subject_ids, sentences, tags = [], [], []
+    sid, sent, tag = None, ['<START>'], ['<START>']
     with open(filepath, 'r', encoding='utf8') as f:
         for line in f:
             if line == '\n':
                 if len(sent) > 1:
+                    subject_ids.append(sid)
                     sentences.append(sent + ['<END>'])
                     tags.append(tag + ['<END>'])
                 sent, tag = ['<START>'], ['<START>']
             else:
                 line = line.split()
-                sent.append(line[0])
-                tag.append(line[1])
-    return sentences, tags
+                sid = str(line[0]).strip()
+                sent.append(line[1])
+                tag.append(line[2])
+    return subject_ids, sentences, tags
 
 
 def generate_train_dev_dataset(filepath, sent_vocab, tag_vocab, train_proportion=0.8):
@@ -38,7 +40,7 @@ def generate_train_dev_dataset(filepath, sent_vocab, tag_vocab, train_proportion
         dev_data: data for development, list of tuples, each containing a sentence and corresponding tag.
     """
     # from funcy import flatten
-    sentences, tags = read_corpus(filepath)
+    subject_ids, sentences, tags = read_corpus(filepath)
     # for x in flatten(tags):
     #     if x == "B-qiechufanwei_canwei":
     #         print(x)    
@@ -46,7 +48,7 @@ def generate_train_dev_dataset(filepath, sent_vocab, tag_vocab, train_proportion
     print(tags)
     tags = words2indices(tags, tag_vocab)
 
-    data = list(zip(sentences, tags))
+    data = list(zip(subject_ids, sentences, tags))
     random.shuffle(data)
     n_train = int(len(data) * train_proportion)
     train_data, dev_data = data[: n_train], data[n_train:]
@@ -54,7 +56,7 @@ def generate_train_dev_dataset(filepath, sent_vocab, tag_vocab, train_proportion
 
 
 def batch_iter(data, batch_size=32, shuffle=True):
-    """ Yield batch of (sent, tag), by the reversed order of source length.
+    """ Yield batch of (id, sent, tag), by the reversed order of source length.
     Args:
         data: list of tuples, each tuple contains a sentence and corresponding tag.
         batch_size: batch size
@@ -67,10 +69,12 @@ def batch_iter(data, batch_size=32, shuffle=True):
     batch_num = (data_size + batch_size - 1) // batch_size
     for i in range(batch_num):
         batch = [data[idx] for idx in indices[i * batch_size: (i + 1) * batch_size]]
-        batch = sorted(batch, key=lambda x: len(x[0]), reverse=True)
-        sentences = [x[0] for x in batch]
-        tags = [x[1] for x in batch]
-        yield sentences, tags
+        batch = sorted(batch, key=lambda x: len(x[1]), reverse=True)        
+        # import pdb; pdb.set_trace()
+        subject_ids = [x[0] for x in batch]
+        sentences = [x[1] for x in batch]
+        tags = [x[2] for x in batch]
+        yield subject_ids, sentences, tags
 
 
 def words2indices(origin, vocab):
@@ -127,7 +131,7 @@ def print_var(**kwargs):
 
 
 def main():
-    sentences, tags = read_corpus('data/train.txt')
+    subject_ids, sentences, tags = read_corpus('data/train.txt')
     print(len(sentences), len(tags))
 
 
